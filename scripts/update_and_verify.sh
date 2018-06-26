@@ -67,7 +67,21 @@ EOF
 wget --quiet "$REMOTE_DIR/$JSON_FILE" -O "$TMP_DIR/$JSON_FILE"
 wget --quiet "$REMOTE_DIR/$SIG_FILE" -O "$TMP_DIR/$SIG_FILE"
 
-gpgv --keyring="$TMP_DIR/authority.key" "$TMP_DIR/$SIG_FILE" "$TMP_DIR/$JSON_FILE"
+gpgv --status-fd 3 3>"$TMP_DIR/gpgv.status" --keyring="$TMP_DIR/authority.key" "$TMP_DIR/$SIG_FILE" "$TMP_DIR/$JSON_FILE"
+
+get_sig_epoch_date() {
+    awk '($1 == "[GNUPG:]" && $2 == "VALIDSIG" && $12 == "'$AUTHORITY_FINGERPRINT'") { print $5 }'
+}
+
+if [ -r "$LOCAL_DIR/$JSON_FILE" ] && [ -r "$LOCAL_DIR/$SIG_FILE" ] ; then
+    gpgv --status-fd 3 3>"$TMP_DIR/gpgv.old.status" --keyring="$TMP_DIR/authority.key" "$LOCAL_DIR/$SIG_FILE" "$LOCAL_DIR/$JSON_FILE"
+    OLD_DATE=$(get_sig_epoch_date < "$TMP_DIR/gpgv.old.status")
+    NEW_DATE=$(get_sig_epoch_date < "$TMP_DIR/gpgv.status")
+    if [ $NEW_DATE -lt $OLD_DATE ] ; then
+        printf "Rollback detected (old date %d, new date %d)!\n" "$OLD_DATE" "$NEW_DATE" >&2
+        exit 1
+    fi
+fi
 
 mkdir -p $LOCAL_DIR
 
