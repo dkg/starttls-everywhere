@@ -53,6 +53,13 @@
         ".facebook.com"
       ]
     },
+    "fifthhorseman.net": {
+      "mode": "testing",
+      "mxs": [
+        "mailwash12.pair.com",
+        "mx.fifthhorseman.net"
+      ]
+    },
     "gmail.com": {
       "policy-alias": "google"
     },
